@@ -31,3 +31,7 @@ Revision history for Perl extension Google::GeoCoder::Smart.
 1.17 Wed Nov 5 18:36:00 2014
 	-Google changed the api url
 		-A -n Google::GeoCoder::Smart
+
+1.18 Wed Nov 10 20:48:00 2014
+	-Fixed connection error catching
+		-A -n Google::GeoCoder::Smart

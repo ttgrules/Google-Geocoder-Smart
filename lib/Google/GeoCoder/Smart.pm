@@ -12,7 +12,7 @@ our @ISA = qw(Exporter);
 
 our @EXPORT = qw(geocode parse);
 
-our $VERSION = 1.17;
+our $VERSION = 1.18;
 
 =head1 NAME
 
@@ -177,6 +177,12 @@ undef $err;
 
 undef $error;
 
+unless($content) {
+
+	$error = "ERROR_GETTING_PAGE";
+
+}
+
 if($content =~ m/ZERO_RESULTS/) {
 
 $error = "ZERO_RESULTS";
@@ -203,8 +209,13 @@ $error = "OK";
 
 undef @results;
 
+unless($error eq "OK") {
 
+	@results = [];
+	$length = 0;
+	return $length, $error, @results, $content;
 
+}
 
 $results_json  = decode_json $content;
 
