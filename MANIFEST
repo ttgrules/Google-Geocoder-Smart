@@ -6,3 +6,5 @@ README
 Smart.xs
 t/Google-GeoCoder-Smart.t
 lib/Google/GeoCoder/Smart.pm
+test.pl
+test_old.pl

@@ -1,15 +1,12 @@
-Google-GeoCoder-Smart version 1.18
+Google-GeoCoder-Smart version 2.0.0
 ==================================
 
-This module provides a simple and "Smart" interface to the Google Maps geocoding API. 
-It is based on the current format of the xml returned by the API. If Google changes their format, 
-this module might stop working. The only dependency that this module has is the LWP::Simple module, 
-and its sub-dependencies. I wanted something that was adaptable and would return results 
-automaticaly formatted for perl. I am planning to add a validate function to tell how 
-close the returned match is to the original address passed to the module. 
-If you find any bugs, please let me know. 
+This module provides a simple interface to the Google Maps geocoding API. 
 
 Make sure you read the google maps api terms of service agreement before using this module.
+
+test.pl tests the current version
+test_old.pl uses the old geocode() function.
 
 INSTALLATION
 

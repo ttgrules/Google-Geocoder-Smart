@@ -1,42 +1,22 @@
 use Google::GeoCoder::Smart;
-  
- $geo = Google::GeoCoder::Smart->new();
+ 
+$geo = Google::GeoCoder::Smart->new();
 
- my ($resultnum, $error, @results, $returncontent) = $geo->geocode("address" => "1600 Amphitheatre Parkway Mountain View, CA 94043");
+my $response = $geo->geocode_addr({'address' => '1600 Amphitheatre Parkway, Mountain View, CA'});
 
+if($response->{status} ne "OK") {
+	die "Error: $response->{status}\n";
+}
 
+my $numResults = @{$response->{results}};
 
+if($numResults > 1) {
+	warn "Multiple Matches Found\n";
+}
 
+my $bestMatch = $response->{results}->[0];
 
- $lat = $results[0]{geometry}{location}{lat};
+my $lat = $bestMatch->{geometry}{location}{lat};
+my $lng = $bestMatch->{geometry}{location}{lng};
 
- $lng = $results[0]{geometry}{location}{lng};
-
-
-
-if ($lat) { 
-
-if ($lng) { 
-
-print "test successful!\n";
-
- } 
-
-else { 
-
-print "error no longitude\n"; 
-
-}; 
-
-} 
-
-else { 
-
-print "error no latitude\n";
-
- };  
-
-print "Google Returned Request Status: $error\n";
-
-
-#blame any bugs on the government and the Android phone I wrote this test.pl version from
+print "$lat\n$lng\n";
