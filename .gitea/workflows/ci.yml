@@ -62,3 +62,29 @@ jobs:
         run: |
           perl Makefile.PL
           make test
+
+  readme:
+    name: README Up To Date
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_GENERIC_IMAGE }}
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+      - name: Regenerate README
+        shell: bash
+        run: |
+          set -euo pipefail
+          make readme
+      - name: Fail if README changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! git diff --quiet -- README.md; then
+            echo "README.md is out of date. Run 'make readme' and commit the result."
+            git --no-pager diff -- README.md
+            exit 1
+          fi
