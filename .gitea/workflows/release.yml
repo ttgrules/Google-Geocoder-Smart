@@ -1,0 +1,170 @@
+---
+name: Release
+
+"on":
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Release version (must match module VERSION, e.g. 2.1.0)"
+        required: true
+        type: string
+
+env:
+  CI_GENERIC_IMAGE: gitea.ttgrules.com/dev/generic:latest
+
+jobs:
+  perl-tests:
+    name: Perl Tests
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_GENERIC_IMAGE }}
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+      - name: Run module tests
+        run: |
+          perl Makefile.PL
+          make test
+
+  release:
+    name: Create Tag and Release
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_GENERIC_IMAGE }}
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    needs:
+      - perl-tests
+    if: ${{ github.ref == 'refs/heads/master' }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Determine release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          MODULE_VERSION="$(perl -Ilib -MGoogle::GeoCoder::Smart -e 'print $Google::GeoCoder::Smart::VERSION')"
+          INPUT_VERSION="${{ github.event.inputs.release_version }}"
+          if [[ -n "${INPUT_VERSION}" && "${INPUT_VERSION}" != "${MODULE_VERSION}" ]]; then
+            echo "Input release_version (${INPUT_VERSION}) does not match module version (${MODULE_VERSION})."
+            echo "Please bump \$VERSION in lib/Google/GeoCoder/Smart.pm and rerun."
+            exit 1
+          fi
+          echo "version=${MODULE_VERSION}" >> "${GITHUB_OUTPUT}"
+      - name: Guard existing tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          TAG="v${{ steps.version.outputs.version }}"
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "Tag ${TAG} already exists. Refusing to re-release."
+            exit 1
+          fi
+      - name: Build release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREV_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          {
+            echo "Release v${{ steps.version.outputs.version }}"
+            echo
+            if [[ -n "${PREV_TAG}" ]]; then
+              echo "Changes since ${PREV_TAG}:"
+              git log --no-merges --pretty='- %s' "${PREV_TAG}"..HEAD
+            else
+              echo "Initial tagged release for this repository."
+              git log --no-merges --pretty='- %s'
+            fi
+          } > release-notes.txt
+      - name: Create and push tag
+        shell: bash
+        env:
+          API_TOKEN_GITEA: ${{ secrets.API_TOKEN_GITEA }}
+        run: |
+          set -euo pipefail
+          TAG="v${{ steps.version.outputs.version }}"
+          git config user.name "gitea-actions[bot]"
+          git config user.email "gitea-actions[bot]@users.noreply.local"
+          git tag -a "${TAG}" -m "Release ${TAG}"
+          REMOTE_URL="${{ github.server_url }}/${{ github.repository }}.git"
+          REMOTE_URL_WITH_TOKEN="$(echo "${REMOTE_URL}" | sed "s|://|://${API_TOKEN_GITEA}@|")"
+          git remote set-url origin "${REMOTE_URL_WITH_TOKEN}"
+          git push origin "${TAG}"
+      - name: Create Gitea release
+        shell: bash
+        env:
+          API_TOKEN_GITEA: ${{ secrets.API_TOKEN_GITEA }}
+        run: |
+          set -euo pipefail
+          TAG="v${{ steps.version.outputs.version }}"
+          BODY_ESCAPED="$(jq -Rs . < release-notes.txt)"
+          curl -fsSL \
+            -H "Authorization: token ${API_TOKEN_GITEA}" \
+            -H "Content-Type: application/json" \
+            -X POST \
+            -d "{\"tag_name\":\"${TAG}\",\"target_commitish\":\"master\",\"name\":\"${TAG}\",\"body\":${BODY_ESCAPED},\"draft\":false,\"prerelease\":false}" \
+            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/releases"
+
+  publish-pause:
+    name: Publish to PAUSE
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_GENERIC_IMAGE }}
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    needs:
+      - release
+    if: ${{ github.ref == 'refs/heads/master' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+      - name: Build distribution tarball
+        shell: bash
+        run: |
+          set -euo pipefail
+          perl Makefile.PL
+          make dist
+      - name: Guard existing PAUSE release
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.release.outputs.version }}"
+          DIST_NAME="Google-GeoCoder-Smart-${VERSION}"
+          STATUS_CODE="$(curl -sS -o /tmp/metacpan_release.json -w '%{http_code}' "https://fastapi.metacpan.org/v1/release/${DIST_NAME}")"
+          if [[ "${STATUS_CODE}" == "200" ]]; then
+            echo "PAUSE/MetaCPAN release ${DIST_NAME} already exists. Refusing re-upload."
+            exit 1
+          fi
+      - name: Upload distribution to PAUSE
+        shell: bash
+        env:
+          PAUSE_USERNAME: ${{ secrets.PAUSE_USERNAME }}
+          PAUSE_PASSWORD: ${{ secrets.PAUSE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.release.outputs.version }}"
+          TARBALL="Google-GeoCoder-Smart-${VERSION}.tar.gz"
+          if [[ ! -f "${TARBALL}" ]]; then
+            echo "Expected tarball ${TARBALL} not found."
+            exit 1
+          fi
+          curl -fsSL \
+            -u "${PAUSE_USERNAME}:${PAUSE_PASSWORD}" \
+            -F "HIDDENNAME=${PAUSE_USERNAME}" \
+            -F "CAN_MULTIPART=1" \
+            -F "pause99_add_uri_upload=@${TARBALL}" \
+            "https://pause.perl.org/pause/authenquery?ACTION=add_uri"

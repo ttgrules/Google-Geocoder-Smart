@@ -1,22 +1,8 @@
-use Google::GeoCoder::Smart;
- 
-$geo = Google::GeoCoder::Smart->new();
+use strict;
+use warnings;
 
-my $response = $geo->geocode_addr({'address' => '1600 Amphitheatre Parkway, Mountain View, CA'});
+use Test::More tests => 1;
 
-if($response->{status} ne "OK") {
-	die "Error: $response->{status}\n";
+BEGIN {
+  use_ok('Google::GeoCoder::Smart');
 }
-
-my $numResults = @{$response->{results}};
-
-if($numResults > 1) {
-	warn "Multiple Matches Found\n";
-}
-
-my $bestMatch = $response->{results}->[0];
-
-my $lat = $bestMatch->{geometry}{location}{lat};
-my $lng = $bestMatch->{geometry}{location}{lng};
-
-print "$lat\n$lng\n";
