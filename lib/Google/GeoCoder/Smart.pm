@@ -82,53 +82,11 @@ Runtime dependencies are declared in C<Makefile.PL>:
 
 =back
 
-=head1 UPDATING THE MODULE
-
-When changing request behavior:
-
-=over 4
-
-=item 1.
-
-Keep compatibility for C<geocode()> (legacy wrapper).
-
-=item 2.
-
-Prefer C<geocode_addr()> for new code.
-
-=item 3.
-
-Keep request URLs aligned with Google Geocoding API v3 parameters.
-
-=item 4.
-
-Run tests before release.
-
-=back
-
 =head1 TESTING
 
 Run tests with:
 
   make test
-
-The automated test suite is network-independent and uses mocked HTTP responses.
-
-=head1 README AS SINGLE SOURCE SNAPSHOT
-
-Primary documentation should live in this module POD.
-
-To regenerate C<README.md> from POD for GitHub:
-
-  make readme
-
-or:
-
-  pod2markdown lib/Google/GeoCoder/Smart.pm > README.md
-
-(Requires C<pod2markdown>, typically from C<Pod::Markdown>.)
-
-Repository workflow/CI/release documentation lives in C<RELEASING.md>.
 
 =head1 METHODS
 
@@ -163,6 +121,22 @@ Returns a hashref mirroring Google API JSON.
 Deprecated compatibility wrapper for legacy return shape:
 
   my ($count, $status, @results_and_raw) = $geo->geocode(...);
+
+=head1 README AS SINGLE SOURCE SNAPSHOT
+
+Primary documentation should live in this module POD.
+
+To regenerate C<README.md> from POD for GitHub:
+
+  make readme
+
+or:
+
+  pod2markdown lib/Google/GeoCoder/Smart.pm > README.md
+
+(Requires C<pod2markdown>, typically from C<Pod::Markdown>.)
+
+Repository workflow/CI/release documentation lives in C<RELEASING.md>.
 
 =head1 AUTHOR
 
