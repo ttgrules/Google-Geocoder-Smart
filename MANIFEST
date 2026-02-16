@@ -2,9 +2,13 @@ Changes
 Makefile.PL
 MANIFEST
 ppport.h
-README
+README.md
+RELEASING.md
+LICENSE
+.yamllint
+.gitea/workflows/ci.yml
+.gitea/workflows/release.yml
 Smart.xs
 t/Google-GeoCoder-Smart.t
 lib/Google/GeoCoder/Smart.pm
 test.pl
-test_old.pl

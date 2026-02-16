@@ -1,0 +1,13 @@
+blib/
+_build/
+Build
+Build.bat
+Makefile
+Makefile.old
+pm_to_blib
+MYMETA.json
+MYMETA.yml
+*.bs
+*.c
+*.o
+*.so

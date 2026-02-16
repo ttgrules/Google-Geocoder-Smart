@@ -1,0 +1,64 @@
+---
+name: CI
+
+"on":
+  push:
+    branches:
+      - master
+  pull_request:
+
+env:
+  CI_GENERIC_IMAGE: gitea.ttgrules.com/dev/generic:latest
+
+jobs:
+  yaml-lint:
+    name: YAML Lint
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_GENERIC_IMAGE }}
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+      - name: Show YAMLLint Version
+        run: yamllint --version
+      - name: YAMLLint
+        run: yamllint --format github .
+
+  perl-syntax:
+    name: Perl Syntax Check
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_GENERIC_IMAGE }}
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+      - name: Check Perl syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -type f \( -name '*.pl' -o -name '*.pm' -o -name '*.t' \) -not -path './.git/*' -print0 | while IFS= read -r -d '' FILE; do
+            echo "Checking ${FILE}"
+            perl -Ilib -c "${FILE}"
+          done
+
+  perl-tests:
+    name: Perl Tests
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_GENERIC_IMAGE }}
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+      - name: Run module tests
+        run: |
+          perl Makefile.PL
+          make test
