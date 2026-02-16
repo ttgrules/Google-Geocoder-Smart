@@ -1,14 +1,10 @@
 Changes
+lib/Google/GeoCoder/Smart.pm
+LICENSE
 Makefile.PL
-MANIFEST
+MANIFEST			This list of files
 ppport.h
 README.md
-RELEASING.md
-LICENSE
-.yamllint
-.gitea/workflows/ci.yml
-.gitea/workflows/release.yml
 Smart.xs
 t/Google-GeoCoder-Smart.t
-lib/Google/GeoCoder/Smart.pm
 test.pl
