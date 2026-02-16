@@ -1,27 +1,54 @@
-# Google::GeoCoder::Smart
+# NAME
 
-Perl module for interacting with Google's Geocoding API v3 endpoint.
+Google::GeoCoder::Smart - Simple Google Geocoding API client
 
-## What this module does
+# SYNOPSIS
 
-- Sends geocoding requests to:
-  - `https://maps.googleapis.com/maps/api/geocode/json`
-- Supports:
-  - structured address parts (`address`, `city`, `state`, `zip`)
-  - `place_id`
-  - optional `language`, `region`, and `components`
+    use Google::GeoCoder::Smart;
+
+    my $geo = Google::GeoCoder::Smart->new(
+      key => $ENV{GOOGLE_MAPS_API_KEY},
+    );
+
+    my $response = $geo->geocode_addr({
+      address => '1600 Amphitheatre Parkway',
+      city    => 'Mountain View',
+      state   => 'CA',
+      zip     => '94043',
+    });
+
+    die "Error: $response->{status}" if $response->{status} ne 'OK';
+
+    my $best_match = $response->{results}[0];
+    my $lat = $best_match->{geometry}{location}{lat};
+    my $lng = $best_match->{geometry}{location}{lng};
+
+# DESCRIPTION
+
+This module provides a lightweight wrapper around the Google Geocoding API
+v3 endpoint:
+
+    https://maps.googleapis.com/maps/api/geocode/json
+
+It supports both structured addresses and place IDs, and returns decoded API
+payloads with `rawJSON` attached for debugging.
+
+# WHAT THIS MODULE DOES
+
+- Sends geocoding requests to
+`https://maps.googleapis.com/maps/api/geocode/json`.
+- Supports structured address parts, `place_id`, and optional
+`language`, `region`, `bounds`, and `components`.
 - Returns decoded API payloads with `rawJSON` attached for debugging.
 
-## Installation
+# INSTALLATION
 
-```bash
-perl Makefile.PL
-make
-make test
-make install
-```
+    perl Makefile.PL
+    make
+    make test
+    make install
 
-## Dependencies
+# DEPENDENCIES
 
 Runtime dependencies are declared in `Makefile.PL`:
 
@@ -29,89 +56,79 @@ Runtime dependencies are declared in `Makefile.PL`:
 - `JSON::PP`
 - `URI::Escape`
 
-## Usage
-
-```perl
-use Google::GeoCoder::Smart;
-
-my $geo = Google::GeoCoder::Smart->new(
-  key => $ENV{GOOGLE_MAPS_API_KEY},
-);
-
-my $response = $geo->geocode_addr({
-  address => '1600 Amphitheatre Parkway',
-  city    => 'Mountain View',
-  state   => 'CA',
-  zip     => '94043',
-});
-
-die $response->{status} if $response->{status} ne 'OK';
-```
-
-## Updating the module
+# UPDATING THE MODULE
 
 When changing request behavior:
 
 1. Keep compatibility for `geocode()` (legacy wrapper).
 2. Prefer `geocode_addr()` for new code.
-3. Ensure request URLs stay aligned with Google Geocoding API v3 parameters.
+3. Keep request URLs aligned with Google Geocoding API v3 parameters.
 4. Run tests before release.
 
-## Testing
+# TESTING
 
-Run module tests with:
+Run tests with:
 
-```bash
-make test
-```
+    make test
 
-The test suite does **not** require internet access. HTTP calls are mocked in tests.
+The automated test suite is network-independent and uses mocked HTTP responses.
 
-## CI
+# README AS SINGLE SOURCE SNAPSHOT
 
-Gitea CI workflow (`.gitea/workflows/ci.yml`) runs:
+Primary documentation should live in this module POD.
 
-- YAML linting (`yamllint`)
-- Perl syntax checks (`perl -c`)
-- Module tests (`perl Makefile.PL && make test`)
+To regenerate `README.md` from POD for GitHub:
 
-CI uses the shared private generic container image and registry credentials.
+    make readme
 
-## Releasing and Publishing
+or:
 
-Release/publish automation is split into `.gitea/workflows/release.yml` and runs on:
+    pod2markdown lib/Google/GeoCoder/Smart.pm > README.md
 
-- pushes to `master`
-- manual dispatch (`workflow_dispatch`)
+(Requires `pod2markdown`, typically from `Pod::Markdown`.)
 
-It runs module tests before release/publish, then:
+Repository workflow/CI/release documentation lives in `RELEASING.md`.
 
-- verifies tag/version are new
-- creates git tag + Gitea release notes/release
-- publishes distribution tarball to PAUSE (with duplicate-release guard)
+# METHODS
 
-### Versioning
+## new
 
-1. Update `$VERSION` in `lib/Google/GeoCoder/Smart.pm`.
-2. Update `Changes`.
-3. Merge to `master`.
+    my $geo = Google::GeoCoder::Smart->new(
+      key    => 'your-api-key',
+      host   => 'maps.googleapis.com', # optional
+      scheme => 'https',               # optional
+      timeout => 10,                   # optional
+    );
 
-If the workflow sees an existing tag or existing PAUSE release for that version,
-it fails with an explicit error (no re-release/re-upload).
+## geocode\_addr
 
-### Prompting for version
+    my $response = $geo->geocode_addr({
+      address   => '1600 Amphitheatre Parkway',
+      city      => 'Mountain View',
+      state     => 'CA',
+      zip       => '94043',
+      language  => 'en',
+      region    => 'us',
+      place_id  => 'ChIJ2eUgeAK6j4ARbn5u_wAGqWA',
+      components => {
+        country => 'US',
+      },
+    });
 
-The workflow also supports manual `workflow_dispatch` and prompts for
-`release_version`; it must match the module `$VERSION`.
+Returns a hashref mirroring Google API JSON.
 
-### Required repository secrets
+## geocode
 
-- `REGISTRY_USERNAME`
-- `REGISTRY_TOKEN`
-- `API_TOKEN_GITEA` (tag push + Gitea release creation)
-- `PAUSE_USERNAME`
-- `PAUSE_PASSWORD`
+Deprecated compatibility wrapper for legacy return shape:
 
-## License
+    my ($count, $status, @results_and_raw) = $geo->geocode(...);
 
-See [LICENSE](./LICENSE).
+# AUTHOR
+
+TTG, `ttg@cpan.org`
+
+# LICENSE
+
+This library is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself, either Perl version 5.10.0 or, at your option,
+any later version of Perl 5 you may have available.

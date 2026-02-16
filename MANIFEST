@@ -3,6 +3,7 @@ Makefile.PL
 MANIFEST
 ppport.h
 README.md
+RELEASING.md
 LICENSE
 .yamllint
 .gitea/workflows/ci.yml

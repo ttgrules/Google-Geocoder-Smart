@@ -47,6 +47,89 @@ v3 endpoint:
 It supports both structured addresses and place IDs, and returns decoded API
 payloads with C<rawJSON> attached for debugging.
 
+=head1 WHAT THIS MODULE DOES
+
+=over 4
+
+=item * Sends geocoding requests to
+C<https://maps.googleapis.com/maps/api/geocode/json>.
+
+=item * Supports structured address parts, C<place_id>, and optional
+C<language>, C<region>, C<bounds>, and C<components>.
+
+=item * Returns decoded API payloads with C<rawJSON> attached for debugging.
+
+=back
+
+=head1 INSTALLATION
+
+  perl Makefile.PL
+  make
+  make test
+  make install
+
+=head1 DEPENDENCIES
+
+Runtime dependencies are declared in C<Makefile.PL>:
+
+=over 4
+
+=item * C<HTTP::Tiny>
+
+=item * C<JSON::PP>
+
+=item * C<URI::Escape>
+
+=back
+
+=head1 UPDATING THE MODULE
+
+When changing request behavior:
+
+=over 4
+
+=item 1.
+
+Keep compatibility for C<geocode()> (legacy wrapper).
+
+=item 2.
+
+Prefer C<geocode_addr()> for new code.
+
+=item 3.
+
+Keep request URLs aligned with Google Geocoding API v3 parameters.
+
+=item 4.
+
+Run tests before release.
+
+=back
+
+=head1 TESTING
+
+Run tests with:
+
+  make test
+
+The automated test suite is network-independent and uses mocked HTTP responses.
+
+=head1 README AS SINGLE SOURCE SNAPSHOT
+
+Primary documentation should live in this module POD.
+
+To regenerate C<README.md> from POD for GitHub:
+
+  make readme
+
+or:
+
+  pod2markdown lib/Google/GeoCoder/Smart.pm > README.md
+
+(Requires C<pod2markdown>, typically from C<Pod::Markdown>.)
+
+Repository workflow/CI/release documentation lives in C<RELEASING.md>.
+
 =head1 METHODS
 
 =head2 new
@@ -80,6 +163,16 @@ Returns a hashref mirroring Google API JSON.
 Deprecated compatibility wrapper for legacy return shape:
 
   my ($count, $status, @results_and_raw) = $geo->geocode(...);
+
+=head1 AUTHOR
+
+TTG, C<ttg@cpan.org>
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself, either Perl version 5.10.0 or, at your option,
+any later version of Perl 5 you may have available.
 
 =cut
 
