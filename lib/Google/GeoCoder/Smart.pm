@@ -122,22 +122,6 @@ Deprecated compatibility wrapper for legacy return shape:
 
   my ($count, $status, @results_and_raw) = $geo->geocode(...);
 
-=head1 README AS SINGLE SOURCE SNAPSHOT
-
-Primary documentation should live in this module POD.
-
-To regenerate C<README.md> from POD for GitHub:
-
-  make readme
-
-or:
-
-  pod2markdown lib/Google/GeoCoder/Smart.pm > README.md
-
-(Requires C<pod2markdown>, typically from C<Pod::Markdown>.)
-
-Repository workflow/CI/release documentation lives in C<RELEASING.md>.
-
 =head1 AUTHOR
 
 TTG, C<ttg@cpan.org>

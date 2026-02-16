@@ -32,3 +32,23 @@ Manual `workflow_dispatch` prompts for `release_version`; it must match module
 - `API_TOKEN_GITEA`
 - `PAUSE_USERNAME`
 - `PAUSE_PASSWORD`
+
+# README.md generation
+
+Primary documentation should live in this module POD.
+
+To regenerate `README.md` from POD:
+
+```sh
+make readme
+```
+
+or:
+
+```sh
+pod2markdown lib/Google/GeoCoder/Smart.pm > README.md
+```
+
+(Requires `pod2markdown`, typically from `Pod::Markdown`.)
+
+Repository workflow/CI/release documentation lives in `RELEASING.md`.
