@@ -235,3 +235,8 @@ jobs:
             cat "${PAUSE_RESPONSE_FILE}"
             exit 1
           fi
+          if ! grep -qiE 'Query succeeded\.[[:space:]]*<b>[[:space:]]*Thank you for your contribution[[:space:]]*</b>|<p>[[:space:]]*Query succeeded\.' "${PAUSE_RESPONSE_FILE}"; then
+            echo "PAUSE upload failed: response does not include a known success marker."
+            cat "${PAUSE_RESPONSE_FILE}"
+            exit 1
+          fi
