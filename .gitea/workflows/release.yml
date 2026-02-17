@@ -217,9 +217,21 @@ jobs:
             echo "Expected tarball ${TARBALL} not found."
             exit 1
           fi
-          curl -fsSL \
+          PAUSE_RESPONSE_FILE="$(mktemp)"
+          trap 'rm -f "${PAUSE_RESPONSE_FILE}"' EXIT
+          PAUSE_HTTP_CODE="$(curl -sSL -o "${PAUSE_RESPONSE_FILE}" -w '%{http_code}' \
             -u "${PAUSE_USERNAME}:${PAUSE_PASSWORD}" \
             -F "HIDDENNAME=${PAUSE_USERNAME}" \
             -F "CAN_MULTIPART=1" \
             -F "pause99_add_uri_upload=@${TARBALL}" \
-            "https://pause.perl.org/pause/authenquery?ACTION=add_uri"
+            "https://pause.perl.org/pause/authenquery?ACTION=add_uri")"
+          if [[ "${PAUSE_HTTP_CODE}" -ge 400 ]]; then
+            echo "PAUSE upload failed with HTTP ${PAUSE_HTTP_CODE}."
+            cat "${PAUSE_RESPONSE_FILE}"
+            exit 1
+          fi
+          if grep -qiE '<h2>[[:space:]]*Error[[:space:]]*</h2>|class="error_message"' "${PAUSE_RESPONSE_FILE}"; then
+            echo "PAUSE upload failed: response contains an error message."
+            cat "${PAUSE_RESPONSE_FILE}"
+            exit 1
+          fi
