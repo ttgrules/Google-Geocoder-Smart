@@ -1,0 +1,10 @@
+{
+  "name": "google-geocoder-smart-release",
+  "private": true,
+  "devDependencies": {
+    "@saithodev/semantic-release-gitea": "^2.1.0",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "semantic-release": "^24.2.9"
+  }
+}

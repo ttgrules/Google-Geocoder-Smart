@@ -1,29 +1,27 @@
 # Repository CI and Releasing
 
-This repository ships two Gitea workflows:
+This repository ships one Gitea workflow:
 
 - `.gitea/workflows/ci.yml`
   - YAML linting (`yamllint`)
   - Perl syntax checks (`perl -c`)
   - Module tests (`perl Makefile.PL && make test`)
-- `.gitea/workflows/release.yml`
-  - release/publish pipeline on pushes to `master` and manual dispatch
-  - duplicate tag/release guard
-  - duplicate PAUSE upload guard
+  - semantic-release pipeline on pushes to `master` after CI jobs pass
+  - PR-title-driven semver (`feat` => minor, breaking => major, `fix|perf|revert|chore(deps)` => patch)
+  - updates and commits `$VERSION` in `lib/Google/GeoCoder/Smart.pm` on release
+  - builds and uploads the release tarball as a Gitea release asset
+  - uploads the release tarball to PAUSE with duplicate-release guard
 
 ## Releasing
 
-1. Update `$VERSION` in `lib/Google/GeoCoder/Smart.pm`.
-2. Update `Changes`.
-3. Merge to `master` or run `workflow_dispatch`.
-
-The workflow refuses to re-release an existing tag/version and refuses to
-re-upload an existing PAUSE release.
-
-### Prompting for version
-
-Manual `workflow_dispatch` prompts for `release_version`; it must match module
-`$VERSION`.
+1. Use Conventional Commit style PR titles (for example `fix: ...`, `feat: ...`,
+   or `chore(deps): ...`).
+2. Merge to `master`.
+3. CI release job runs semantic-release, bumps `$VERSION` in
+   `lib/Google/GeoCoder/Smart.pm`, commits the bump on `master`, tags, and
+   creates the Gitea release.
+4. CI builds `Google-GeoCoder-Smart-<version>.tar.gz`, attaches it to the
+   release, and uploads it to PAUSE.
 
 ### Required repository secrets
 
