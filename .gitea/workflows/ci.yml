@@ -43,6 +43,45 @@ jobs:
       - name: YAMLLint
         run: yamllint --format github .
 
+  json-validate:
+    name: JSON Validate
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_GENERIC_IMAGE }}
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+      - name: Validate JSON files
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -type f -name '*.json' -not -path './.git/*' -print0 | \
+            while IFS= read -r -d '' FILE; do
+            echo "Validating ${FILE}"
+            jq empty "${FILE}"
+          done
+
+  format-check:
+    name: Format Check
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_GENERIC_IMAGE }}
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+      - name: Setup Node
+        uses: actions/setup-node@v6.2.0
+        with:
+          node-version: 24
+      - name: Check formatting
+        run: npx --yes prettier --check "**/*.{json,md,mjs,yml,yaml}"
+
   perl-syntax:
     name: Perl Syntax Check
     runs-on: ubuntu-latest
@@ -117,6 +156,8 @@ jobs:
         password: ${{ secrets.REGISTRY_TOKEN }}
     needs:
       - yaml-lint
+      - json-validate
+      - format-check
       - perl-syntax
       - perl-tests
       - readme
