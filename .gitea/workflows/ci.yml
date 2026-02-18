@@ -11,6 +11,22 @@ env:
   CI_GENERIC_IMAGE: gitea.ttgrules.com/dev/generic:latest
 
 jobs:
+  pr-title-check:
+    name: PR Title Check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR title uses conventional commit format
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          PATTERN='^[a-z]+(\([^)]+\))?(!)?: .+'
+          if ! echo "${PR_TITLE}" | grep -Eq "${PATTERN}"; then
+            echo "PR title must use Conventional Commits format"
+            echo "(e.g. feat(scope): summary)."
+            exit 1
+          fi
+
   yaml-lint:
     name: YAML Lint
     runs-on: ubuntu-latest
@@ -87,5 +103,252 @@ jobs:
           if ! git diff --quiet -- README.md; then
             echo "README.md is out of date. Run 'make readme' and commit the result."
             git --no-pager diff -- README.md
+            exit 1
+          fi
+
+  release:
+    name: Release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_GENERIC_IMAGE }}
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    needs:
+      - yaml-lint
+      - perl-syntax
+      - perl-tests
+      - readme
+    outputs:
+      released: ${{ steps.detect-release.outputs.released }}
+      version: ${{ steps.detect-release.outputs.version }}
+      tag: ${{ steps.detect-release.outputs.tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v6.2.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v5.0.3
+        with:
+          path: ./node_modules
+          key: >-
+            cache-node-modules-${{ runner.os }}-${{
+            hashFiles('package-lock.json') }}
+          restore-keys: |
+            cache-node-modules-${{ runner.os }}-
+            cache-node-modules-
+
+      - name: Install dependencies
+        run: |
+          CACHE_HIT="${{ steps.cache-node-modules.outputs.cache-hit }}"
+          if [ "${CACHE_HIT}" = "true" ]; then
+            npm install
+          else
+            npm ci
+          fi
+
+      - name: Configure git author
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.local"
+
+      - name: Configure authenticated origin
+        run: |
+          REMOTE_URL="${{ github.server_url }}/${{ github.repository }}.git"
+          REMOTE_URL_WITH_TOKEN="$(echo "${REMOTE_URL}" | \
+            sed "s|://|://${{ secrets.API_TOKEN_GITEA }}@|")"
+          git remote set-url origin "${REMOTE_URL_WITH_TOKEN}"
+
+      - name: Capture latest tag before release
+        id: before-release
+        run: |
+          git fetch --tags --force
+          PREV_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          echo "tag=${PREV_TAG}" >> "${GITHUB_OUTPUT}"
+
+      - name: Run semantic-release
+        env:
+          GITEA_TOKEN: ${{ secrets.API_TOKEN_GITEA }}
+          GITEA_URL: ${{ github.server_url }}
+          GIT_AUTHOR_NAME: ${{ github.actor }}
+          GIT_AUTHOR_EMAIL: ${{ github.actor }}@users.noreply.local
+          GIT_COMMITTER_NAME: ${{ github.actor }}
+          GIT_COMMITTER_EMAIL: ${{ github.actor }}@users.noreply.local
+        run: npx semantic-release
+
+      - name: Detect published release
+        id: detect-release
+        run: |
+          git fetch --tags --force
+          PREV_TAG="${{ steps.before-release.outputs.tag }}"
+          NEW_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          if [ -n "${NEW_TAG}" ] && [ "${NEW_TAG}" != "${PREV_TAG}" ]; then
+            echo "released=true" >> "${GITHUB_OUTPUT}"
+            echo "tag=${NEW_TAG}" >> "${GITHUB_OUTPUT}"
+            echo "version=${NEW_TAG#v}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "released=false" >> "${GITHUB_OUTPUT}"
+            echo "tag=" >> "${GITHUB_OUTPUT}"
+            echo "version=" >> "${GITHUB_OUTPUT}"
+          fi
+
+  make-dist:
+    name: Build distribution tarball
+    if: needs.release.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_GENERIC_IMAGE }}
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    needs:
+      - release
+    outputs:
+      tarball: ${{ steps.dist.outputs.tarball }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+
+      - name: Build distribution tarball
+        id: dist
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.release.outputs.version }}"
+          TARBALL="Google-GeoCoder-Smart-${VERSION}.tar.gz"
+          perl Makefile.PL
+          make dist
+          if [ ! -f "${TARBALL}" ]; then
+            echo "Expected tarball ${TARBALL} not found."
+            exit 1
+          fi
+          echo "tarball=${TARBALL}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload distribution tarball artifact
+        uses: https://github.com/christopherHX/gitea-upload-artifact@v4
+        with:
+          name: dist-tarball
+          path: ${{ steps.dist.outputs.tarball }}
+          if-no-files-found: error
+
+  attach-release-asset:
+    name: Attach tarball to release
+    if: needs.release.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_GENERIC_IMAGE }}
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    needs:
+      - release
+      - make-dist
+    steps:
+      - name: Download distribution tarball artifact
+        uses: https://github.com/christopherHX/gitea-download-artifact@v4
+        with:
+          name: dist-tarball
+          path: .
+
+      - name: Upload release asset
+        shell: bash
+        env:
+          API_TOKEN_GITEA: ${{ secrets.API_TOKEN_GITEA }}
+        run: |
+          set -euo pipefail
+          TAG="${{ needs.release.outputs.tag }}"
+          TARBALL="${{ needs.make-dist.outputs.tarball }}"
+          RELEASE_RESPONSE="$(curl -fsSL \
+            -H "Authorization: token ${API_TOKEN_GITEA}" \
+            -H "Accept: application/json" \
+            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/releases/tags/${TAG}")"
+          RELEASE_ID="$(echo "${RELEASE_RESPONSE}" | jq -r '.id')"
+          if [ -z "${RELEASE_ID}" ] || [ "${RELEASE_ID}" = "null" ]; then
+            echo "Could not determine release ID for tag ${TAG}."
+            exit 1
+          fi
+          curl -fsSL \
+            -H "Authorization: token ${API_TOKEN_GITEA}" \
+            -X POST \
+            -F "attachment=@${TARBALL}" \
+            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/releases/${RELEASE_ID}/assets?name=${TARBALL}"
+
+  publish-pause:
+    name: Publish to PAUSE
+    if: needs.release.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_GENERIC_IMAGE }}
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    needs:
+      - release
+      - make-dist
+    steps:
+      - name: Download distribution tarball artifact
+        uses: https://github.com/christopherHX/gitea-download-artifact@v4
+        with:
+          name: dist-tarball
+          path: .
+
+      - name: Guard existing PAUSE release
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.release.outputs.version }}"
+          DIST_NAME="Google-GeoCoder-Smart-${VERSION}"
+          STATUS_CODE="$(curl -sS -o /tmp/metacpan_release.json -w '%{http_code}' "https://fastapi.metacpan.org/v1/release/${DIST_NAME}")"
+          if [ "${STATUS_CODE}" = "200" ]; then
+            echo "PAUSE/MetaCPAN release ${DIST_NAME} already exists. Refusing re-upload."
+            exit 1
+          fi
+
+      - name: Upload distribution to PAUSE
+        shell: bash
+        env:
+          PAUSE_USERNAME: ${{ secrets.PAUSE_USERNAME }}
+          PAUSE_PASSWORD: ${{ secrets.PAUSE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.release.outputs.version }}"
+          TARBALL="Google-GeoCoder-Smart-${VERSION}.tar.gz"
+          if [ ! -f "${TARBALL}" ]; then
+            echo "Expected tarball ${TARBALL} not found."
+            exit 1
+          fi
+          PAUSE_RESPONSE_FILE="$(mktemp)"
+          trap 'rm -f "${PAUSE_RESPONSE_FILE}"' EXIT
+          PAUSE_HTTP_CODE="$(curl -sSL -o "${PAUSE_RESPONSE_FILE}" -w '%{http_code}' \
+            -u "${PAUSE_USERNAME}:${PAUSE_PASSWORD}" \
+            -F "HIDDENNAME=${PAUSE_USERNAME}" \
+            -F "CAN_MULTIPART=1" \
+            -F "pause99_add_uri_upload=@${TARBALL}" \
+            "https://pause.perl.org/pause/authenquery?ACTION=add_uri")"
+          if [ "${PAUSE_HTTP_CODE}" -ge 400 ]; then
+            echo "PAUSE upload failed with HTTP ${PAUSE_HTTP_CODE}."
+            cat "${PAUSE_RESPONSE_FILE}"
+            exit 1
+          fi
+          if grep -qiE '<h2>[[:space:]]*Error[[:space:]]*</h2>|class="error_message"' "${PAUSE_RESPONSE_FILE}"; then
+            echo "PAUSE upload failed: response contains an error message."
+            cat "${PAUSE_RESPONSE_FILE}"
+            exit 1
+          fi
+          if ! grep -qiE 'Query succeeded\.[[:space:]]*<b>[[:space:]]*Thank you for your contribution[[:space:]]*</b>|<p>[[:space:]]*Query succeeded\.' "${PAUSE_RESPONSE_FILE}"; then
+            echo "PAUSE upload failed: response does not include a known success marker."
+            cat "${PAUSE_RESPONSE_FILE}"
             exit 1
           fi

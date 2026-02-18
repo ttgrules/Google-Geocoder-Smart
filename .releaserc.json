@@ -1,0 +1,22 @@
+{
+  "branches": ["master"],
+  "tagFormat": "v${version}",
+  "plugins": [
+    [
+      "@semantic-release/exec",
+      {
+        "analyzeCommitsCmd": "node scripts/release/analyze-pr-titles.mjs",
+        "generateNotesCmd": "node scripts/release/generate-pr-release-notes.mjs",
+        "prepareCmd": "node scripts/release/update-perl-version.mjs ${nextRelease.version}"
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["lib/Google/GeoCoder/Smart.pm"],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
+    "@saithodev/semantic-release-gitea"
+  ]
+}

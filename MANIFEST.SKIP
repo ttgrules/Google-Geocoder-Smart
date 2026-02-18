@@ -2,6 +2,10 @@
 ^\.gitea/
 ^\.yamllint$
 ^\.gitignore$
+^\.releaserc\.json$
+^package\.json$
+^package-lock\.json$
+^scripts/release(?:/|$)
 ^.*\.tar\.gz$
 ^RELEASING\.md$
 ^MANIFEST\..*$
