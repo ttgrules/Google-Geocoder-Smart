@@ -51,11 +51,9 @@ payloads with C<rawJSON> attached for debugging.
 
 =over 4
 
-=item * Sends geocoding requests to
-C<https://maps.googleapis.com/maps/api/geocode/json>.
+=item * Sends geocoding requests to C<https://maps.googleapis.com/maps/api/geocode/json>.
 
-=item * Supports structured address parts, C<place_id>, and optional
-C<language>, C<region>, C<bounds>, and C<components>.
+=item * Supports structured address parts, C<place_id>, and optional C<language>, C<region>, C<bounds>, and C<components>.
 
 =item * Returns decoded API payloads with C<rawJSON> attached for debugging.
 
@@ -99,7 +97,7 @@ Run tests with:
     timeout => 10,                   # optional
   );
 
-=head2 geocode_addr
+=head2 C<geocode_addr>
 
   my $response = $geo->geocode_addr({
     address   => '1600 Amphitheatre Parkway',

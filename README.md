@@ -35,10 +35,8 @@ payloads with `rawJSON` attached for debugging.
 
 # WHAT THIS MODULE DOES
 
-- Sends geocoding requests to
-`https://maps.googleapis.com/maps/api/geocode/json`.
-- Supports structured address parts, `place_id`, and optional
-`language`, `region`, `bounds`, and `components`.
+- Sends geocoding requests to `https://maps.googleapis.com/maps/api/geocode/json`.
+- Supports structured address parts, `place_id`, and optional `language`, `region`, `bounds`, and `components`.
 - Returns decoded API payloads with `rawJSON` attached for debugging.
 
 # INSTALLATION
@@ -73,7 +71,7 @@ Run tests with:
       timeout => 10,                   # optional
     );
 
-## geocode\_addr
+## `geocode_addr`
 
     my $response = $geo->geocode_addr({
       address   => '1600 Amphitheatre Parkway',
