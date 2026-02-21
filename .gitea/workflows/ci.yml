@@ -156,7 +156,8 @@ jobs:
       - format-check
       - perl-syntax
       - perl-tests
-      - readme      - renovate-config-validate
+      - readme
+      - renovate-config-validate
       - renovate-policy-check
 
     steps:
