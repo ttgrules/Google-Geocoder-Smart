@@ -145,6 +145,45 @@ jobs:
             exit 1
           fi
 
+  renovate-config-validate:
+    name: Renovate Config Validate
+    runs-on: ubuntu-latest
+    container:
+      image: renovate/renovate
+    needs:
+      - json-validate
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+      - name: Validate renovate.json
+        run: renovate-config-validator renovate.json
+
+  renovate-policy-check:
+    name: Renovate Policy Check
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_GENERIC_IMAGE }}
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    needs:
+      - renovate-config-validate
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+      - name: Validate policy invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -e '.["$schema"] == "https://docs.renovatebot.com/renovate-schema.json"' renovate.json >/dev/null
+          jq -e '
+            any(
+              .packageRules[]?;
+              .automerge == true and
+              ((.matchUpdateTypes // []) | sort == ["digest","minor","patch","pin"])
+            )
+          ' renovate.json >/dev/null
+
   quality-gate:
     name: Quality Gate
     runs-on: ubuntu-latest
