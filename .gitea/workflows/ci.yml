@@ -156,7 +156,9 @@ jobs:
       - format-check
       - perl-syntax
       - perl-tests
-      - readme
+      - readme      - renovate-config-validate
+      - renovate-policy-check
+
     steps:
       - name: Enforce required check jobs
         shell: bash
@@ -169,6 +171,8 @@ jobs:
             "perl-syntax:${{ needs.perl-syntax.result }}"
             "perl-tests:${{ needs.perl-tests.result }}"
             "readme:${{ needs.readme.result }}"
+            "renovate-config-validate:${{ needs.renovate-config-validate.result }}"
+            "renovate-policy-check:${{ needs.renovate-policy-check.result }}"
           )
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
