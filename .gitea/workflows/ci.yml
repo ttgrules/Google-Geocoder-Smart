@@ -145,6 +145,46 @@ jobs:
             exit 1
           fi
 
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - pr-title-check
+      - yaml-lint
+      - json-validate
+      - format-check
+      - perl-syntax
+      - perl-tests
+      - readme
+    steps:
+      - name: Enforce required check jobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          REQUIRED_JOBS=(
+            "yaml-lint:${{ needs.yaml-lint.result }}"
+            "json-validate:${{ needs.json-validate.result }}"
+            "format-check:${{ needs.format-check.result }}"
+            "perl-syntax:${{ needs.perl-syntax.result }}"
+            "perl-tests:${{ needs.perl-tests.result }}"
+            "readme:${{ needs.readme.result }}"
+          )
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            REQUIRED_JOBS+=("pr-title-check:${{ needs.pr-title-check.result }}")
+          fi
+
+          failed=0
+          for item in "${REQUIRED_JOBS[@]}"; do
+            job="${item%%:*}"
+            result="${item#*:}"
+            echo "${job}: ${result}"
+            [ "${result}" = "success" ] || failed=1
+          done
+
+          [ "${failed}" -eq 0 ] || { echo "Quality gate failed"; exit 1; }
+
   release:
     name: Release
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -155,12 +195,7 @@ jobs:
         username: ${{ secrets.REGISTRY_USERNAME }}
         password: ${{ secrets.REGISTRY_TOKEN }}
     needs:
-      - yaml-lint
-      - json-validate
-      - format-check
-      - perl-syntax
-      - perl-tests
-      - readme
+      - quality-gate
     outputs:
       released: ${{ steps.detect-release.outputs.released }}
       version: ${{ steps.detect-release.outputs.version }}
