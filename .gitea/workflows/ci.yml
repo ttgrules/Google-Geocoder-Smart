@@ -280,10 +280,20 @@ jobs:
             npm ci
           fi
 
+      - name: Compute git noreply identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          HOST="${{ github.server_url }}"
+          HOST="${HOST#https://}"
+          HOST="${HOST#http://}"
+          echo "GIT_NOREPLY_EMAIL=${{ github.actor }}@noreply.${HOST}" >> "${GITHUB_ENV}"
+
       - name: Configure git author
         run: |
           git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.local"
+          git config user.email "${GIT_NOREPLY_EMAIL}"
+          echo "Configured git author as ${GITHUB_ACTOR} <${GIT_NOREPLY_EMAIL}>"
 
       - name: Configure authenticated origin
         run: |
@@ -332,9 +342,9 @@ jobs:
           GITEA_TOKEN: ${{ secrets.API_TOKEN_GITEA }}
           GITEA_URL: ${{ github.server_url }}
           GIT_AUTHOR_NAME: ${{ github.actor }}
-          GIT_AUTHOR_EMAIL: ${{ github.actor }}@users.noreply.local
+          GIT_AUTHOR_EMAIL: ${{ env.GIT_NOREPLY_EMAIL }}
           GIT_COMMITTER_NAME: ${{ github.actor }}
-          GIT_COMMITTER_EMAIL: ${{ github.actor }}@users.noreply.local
+          GIT_COMMITTER_EMAIL: ${{ env.GIT_NOREPLY_EMAIL }}
         run: npx semantic-release
 
       - name: Detect published release
