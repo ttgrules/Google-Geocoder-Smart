@@ -11,13 +11,6 @@
       }
     ],
     [
-      "@semantic-release/git",
-      {
-        "assets": ["lib/Google/GeoCoder/Smart.pm"],
-        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
-      }
-    ],
-    [
       "@saithodev/semantic-release-gitea",
       {
         "assets": [
