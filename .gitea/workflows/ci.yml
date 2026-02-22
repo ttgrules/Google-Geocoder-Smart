@@ -244,6 +244,9 @@ jobs:
       released: ${{ steps.detect-release.outputs.released }}
       version: ${{ steps.detect-release.outputs.version }}
       tag: ${{ steps.detect-release.outputs.tag }}
+      tarball: ${{ steps.detect-release.outputs.tarball }}
+      has_dist_changes: ${{ steps.detect-dist-changes.outputs.has_dist_changes }}
+      publish_pause: ${{ steps.detect-release.outputs.publish_pause }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6.0.2
@@ -296,6 +299,26 @@ jobs:
           PREV_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
           echo "tag=${PREV_TAG}" >> "${GITHUB_OUTPUT}"
 
+      - name: Detect MANIFEST-tracked changes since last release
+        id: detect-dist-changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREV_TAG="${{ steps.before-release.outputs.tag }}"
+          if [ -n "${PREV_TAG}" ]; then
+            RANGE="${PREV_TAG}..HEAD"
+          else
+            FIRST_COMMIT="$(git rev-list --max-parents=0 HEAD)"
+            RANGE="${FIRST_COMMIT}..HEAD"
+          fi
+          git diff --name-only "${RANGE}" | sort -u > /tmp/changed-files.txt
+          sort -u MANIFEST > /tmp/manifest-files.txt
+          if comm -12 /tmp/changed-files.txt /tmp/manifest-files.txt | grep -q .; then
+            echo "has_dist_changes=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "has_dist_changes=false" >> "${GITHUB_OUTPUT}"
+          fi
+
       - name: Run semantic-release
         env:
           GITEA_TOKEN: ${{ secrets.API_TOKEN_GITEA }}
@@ -316,98 +339,31 @@ jobs:
             echo "released=true" >> "${GITHUB_OUTPUT}"
             echo "tag=${NEW_TAG}" >> "${GITHUB_OUTPUT}"
             echo "version=${NEW_TAG#v}" >> "${GITHUB_OUTPUT}"
+            echo "tarball=Google-GeoCoder-Smart-${NEW_TAG#v}.tar.gz" >> "${GITHUB_OUTPUT}"
+            if [ "${{ steps.detect-dist-changes.outputs.has_dist_changes }}" = "true" ]; then
+              echo "publish_pause=true" >> "${GITHUB_OUTPUT}"
+            else
+              echo "publish_pause=false" >> "${GITHUB_OUTPUT}"
+            fi
           else
             echo "released=false" >> "${GITHUB_OUTPUT}"
             echo "tag=" >> "${GITHUB_OUTPUT}"
             echo "version=" >> "${GITHUB_OUTPUT}"
+            echo "tarball=" >> "${GITHUB_OUTPUT}"
+            echo "publish_pause=false" >> "${GITHUB_OUTPUT}"
           fi
-
-  make-dist:
-    name: Build distribution tarball
-    if: needs.release.outputs.released == 'true'
-    runs-on: ubuntu-latest
-    container:
-      image: ${{ env.CI_GENERIC_IMAGE }}
-      credentials:
-        username: ${{ secrets.REGISTRY_USERNAME }}
-        password: ${{ secrets.REGISTRY_TOKEN }}
-    needs:
-      - release
-    outputs:
-      tarball: ${{ steps.dist.outputs.tarball }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.2
-        with:
-          ref: ${{ needs.release.outputs.tag }}
-
-      - name: Build distribution tarball
-        id: dist
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION="${{ needs.release.outputs.version }}"
-          TARBALL="Google-GeoCoder-Smart-${VERSION}.tar.gz"
-          perl Makefile.PL
-          make dist
-          if [ ! -f "${TARBALL}" ]; then
-            echo "Expected tarball ${TARBALL} not found."
-            exit 1
-          fi
-          echo "tarball=${TARBALL}" >> "${GITHUB_OUTPUT}"
 
       - name: Upload distribution tarball artifact
+        if: steps.detect-release.outputs.released == 'true'
         uses: https://github.com/christopherHX/gitea-upload-artifact@v4
         with:
           name: dist-tarball
-          path: ${{ steps.dist.outputs.tarball }}
+          path: ${{ steps.detect-release.outputs.tarball }}
           if-no-files-found: error
-
-  attach-release-asset:
-    name: Attach tarball to release
-    if: needs.release.outputs.released == 'true'
-    runs-on: ubuntu-latest
-    container:
-      image: ${{ env.CI_GENERIC_IMAGE }}
-      credentials:
-        username: ${{ secrets.REGISTRY_USERNAME }}
-        password: ${{ secrets.REGISTRY_TOKEN }}
-    needs:
-      - release
-      - make-dist
-    steps:
-      - name: Download distribution tarball artifact
-        uses: https://github.com/christopherHX/gitea-download-artifact@v4
-        with:
-          name: dist-tarball
-          path: .
-
-      - name: Upload release asset
-        shell: bash
-        env:
-          API_TOKEN_GITEA: ${{ secrets.API_TOKEN_GITEA }}
-        run: |
-          set -euo pipefail
-          TAG="${{ needs.release.outputs.tag }}"
-          TARBALL="${{ needs.make-dist.outputs.tarball }}"
-          RELEASE_RESPONSE="$(curl -fsSL \
-            -H "Authorization: token ${API_TOKEN_GITEA}" \
-            -H "Accept: application/json" \
-            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/releases/tags/${TAG}")"
-          RELEASE_ID="$(echo "${RELEASE_RESPONSE}" | jq -r '.id')"
-          if [ -z "${RELEASE_ID}" ] || [ "${RELEASE_ID}" = "null" ]; then
-            echo "Could not determine release ID for tag ${TAG}."
-            exit 1
-          fi
-          curl -fsSL \
-            -H "Authorization: token ${API_TOKEN_GITEA}" \
-            -X POST \
-            -F "attachment=@${TARBALL}" \
-            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/releases/${RELEASE_ID}/assets?name=${TARBALL}"
 
   publish-pause:
     name: Publish to PAUSE
-    if: needs.release.outputs.released == 'true'
+    if: needs.release.outputs.publish_pause == 'true'
     runs-on: ubuntu-latest
     container:
       image: ${{ env.CI_GENERIC_IMAGE }}
@@ -416,7 +372,6 @@ jobs:
         password: ${{ secrets.REGISTRY_TOKEN }}
     needs:
       - release
-      - make-dist
     steps:
       - name: Download distribution tarball artifact
         uses: https://github.com/christopherHX/gitea-download-artifact@v4

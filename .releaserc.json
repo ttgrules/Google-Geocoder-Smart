@@ -7,7 +7,7 @@
       {
         "analyzeCommitsCmd": "node scripts/release/analyze-pr-titles.mjs",
         "generateNotesCmd": "node scripts/release/generate-pr-release-notes.mjs",
-        "prepareCmd": "node scripts/release/update-perl-version.mjs ${nextRelease.version}"
+        "prepareCmd": "node scripts/release/update-perl-version.mjs ${nextRelease.version} && perl Makefile.PL && make dist"
       }
     ],
     [
@@ -17,6 +17,16 @@
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
     ],
-    "@saithodev/semantic-release-gitea"
+    [
+      "@saithodev/semantic-release-gitea",
+      {
+        "assets": [
+          {
+            "path": "Google-GeoCoder-Smart-${nextRelease.version}.tar.gz",
+            "name": "Google-GeoCoder-Smart-${nextRelease.version}.tar.gz"
+          }
+        ]
+      }
+    ]
   ]
 }
