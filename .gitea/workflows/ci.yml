@@ -319,6 +319,14 @@ jobs:
             echo "has_dist_changes=false" >> "${GITHUB_OUTPUT}"
           fi
 
+      - name: Debug release commit content
+        shell: bash
+        run: |
+          set -euo pipefail
+          git --no-pager status --short
+          git --no-pager diff --name-status
+          git --no-pager diff -- lib/Google/GeoCoder/Smart.pm
+
       - name: Run semantic-release
         env:
           GITEA_TOKEN: ${{ secrets.API_TOKEN_GITEA }}
