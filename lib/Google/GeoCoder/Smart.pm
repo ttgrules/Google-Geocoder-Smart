@@ -10,7 +10,8 @@ use JSON::PP qw(decode_json);
 use URI::Escape qw(uri_escape_utf8);
 
 our @EXPORT = qw(geocode parse);
-our $VERSION = 'develop';
+
+our $VERSION = "v0.0.0";
 
 =head1 NAME
 
