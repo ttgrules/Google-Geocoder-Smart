@@ -7,7 +7,7 @@
       {
         "analyzeCommitsCmd": "node scripts/release/analyze-pr-titles.mjs",
         "generateNotesCmd": "node scripts/release/generate-pr-release-notes.mjs",
-        "prepareCmd": "node scripts/release/update-perl-version.mjs ${nextRelease.version} && perl Makefile.PL && make dist"
+        "prepareCmd": "node scripts/release/update-perl-version.mjs v${nextRelease.version} && perl Makefile.PL && make dist"
       }
     ],
     [
@@ -15,8 +15,8 @@
       {
         "assets": [
           {
-            "path": "Google-GeoCoder-Smart-${nextRelease.version}.tar.gz",
-            "name": "Google-GeoCoder-Smart-${nextRelease.version}.tar.gz"
+            "path": "Google-GeoCoder-Smart-v${nextRelease.version}.tar.gz",
+            "name": "Google-GeoCoder-Smart-v${nextRelease.version}.tar.gz"
           }
         ]
       }

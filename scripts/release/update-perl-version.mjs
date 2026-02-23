@@ -8,10 +8,10 @@ if (!nextVersion) {
 
 const modulePath = "lib/Google/GeoCoder/Smart.pm";
 const source = await readFile(modulePath, "utf8");
-const pattern = /our \$VERSION = '([^']+)';/;
+const pattern = /v0\.0\.0/;
 if (!pattern.test(source)) {
   throw new Error(`Could not find $VERSION assignment in ${modulePath}.`);
 }
 
-const updated = source.replace(pattern, `our $VERSION = '${nextVersion}';`);
+const updated = source.replace(pattern, `${nextVersion}`);
 await writeFile(modulePath, updated, "utf8");
