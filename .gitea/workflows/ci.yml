@@ -271,7 +271,6 @@ jobs:
       - quality-gate
     outputs:
       released: ${{ steps.detect-release.outputs.released }}
-      version: ${{ steps.detect-release.outputs.version }}
       tag: ${{ steps.detect-release.outputs.tag }}
       tarball: ${{ steps.detect-release.outputs.tarball }}
       has_dist_changes: ${{ steps.detect-dist-changes.outputs.has_dist_changes }}
@@ -358,8 +357,7 @@ jobs:
           if [ -n "${NEW_TAG}" ] && [ "${NEW_TAG}" != "${PREV_TAG}" ]; then
             echo "released=true" >> "${GITHUB_OUTPUT}"
             echo "tag=${NEW_TAG}" >> "${GITHUB_OUTPUT}"
-            echo "version=${NEW_TAG#v}" >> "${GITHUB_OUTPUT}"
-            echo "tarball=Google-GeoCoder-Smart-${NEW_TAG#v}.tar.gz" >> "${GITHUB_OUTPUT}"
+            echo "tarball=Google-GeoCoder-Smart-${NEW_TAG}.tar.gz" >> "${GITHUB_OUTPUT}"
             if [ "${{ steps.detect-dist-changes.outputs.has_dist_changes }}" = "true" ]; then
               echo "publish_pause=true" >> "${GITHUB_OUTPUT}"
             else
@@ -368,7 +366,6 @@ jobs:
           else
             echo "released=false" >> "${GITHUB_OUTPUT}"
             echo "tag=" >> "${GITHUB_OUTPUT}"
-            echo "version=" >> "${GITHUB_OUTPUT}"
             echo "tarball=" >> "${GITHUB_OUTPUT}"
             echo "publish_pause=false" >> "${GITHUB_OUTPUT}"
           fi
@@ -403,8 +400,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          VERSION="${{ needs.release.outputs.version }}"
-          DIST_NAME="Google-GeoCoder-Smart-${VERSION}"
+          TAG="${{ needs.release.outputs.tag }}"
+          DIST_NAME="Google-GeoCoder-Smart-${TAG}"
           STATUS_CODE="$(curl -sS -o /tmp/metacpan_release.json -w '%{http_code}' "https://fastapi.metacpan.org/v1/release/${DIST_NAME}")"
           if [ "${STATUS_CODE}" = "200" ]; then
             echo "PAUSE/MetaCPAN release ${DIST_NAME} already exists. Refusing re-upload."
@@ -418,8 +415,7 @@ jobs:
           PAUSE_PASSWORD: ${{ secrets.PAUSE_PASSWORD }}
         run: |
           set -euo pipefail
-          VERSION="${{ needs.release.outputs.version }}"
-          TARBALL="Google-GeoCoder-Smart-${VERSION}.tar.gz"
+          TARBALL="${{ needs.release.outputs.tarball }}"
           if [ ! -f "${TARBALL}" ]; then
             echo "Expected tarball ${TARBALL} not found."
             exit 1
