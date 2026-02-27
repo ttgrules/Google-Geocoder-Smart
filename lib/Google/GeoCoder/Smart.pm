@@ -15,7 +15,7 @@ our $VERSION = "v0.0.0";
 
 =head1 NAME
 
-Google::GeoCoder::Smart - Simple Google Geocoding API client
+L<Google::GeoCoder::Smart|https://metacpan.org/pod/Google::GeoCoder::Smart> - Simple Google Geocoding API client
 
 =head1 SYNOPSIS
 
