@@ -38,3 +38,12 @@ find . -type f -name '*.json' -not -path './.git/*' -not -path './node_modules/*
     jq empty "${file}"
   done
 ```
+
+### Geocode Schema Validate
+
+```bash
+GEOCODE_OPENAPI_REF=main node scripts/validate-geocode-schema.cjs /tmp/geocode-v3.schema.json
+npx --yes ajv-cli@5 validate --strict=false --spec=draft7 \
+  -s /tmp/geocode-v3.schema.json \
+  -d t/fixtures/geocode-ok.json
+```
