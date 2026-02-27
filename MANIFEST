@@ -7,4 +7,5 @@ ppport.h
 README.md
 Smart.xs
 t/Google-GeoCoder-Smart.t
+t/fixtures/geocode-ok.json
 test.pl
