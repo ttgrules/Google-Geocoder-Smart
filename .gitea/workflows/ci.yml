@@ -363,7 +363,8 @@ jobs:
             RANGE="${FIRST_COMMIT}..HEAD"
           fi
           git diff --name-only "${RANGE}" | sort -u > /tmp/changed-files.txt
-          sort -u MANIFEST > /tmp/manifest-files.txt
+          awk -F '\t+' 'NF > 0 { gsub(/\r$/, "", $1); if ($1 != "") print $1 }' MANIFEST | \
+            sort -u > /tmp/manifest-files.txt
           if comm -12 /tmp/changed-files.txt /tmp/manifest-files.txt | grep -q .; then
             echo "has_dist_changes=true" >> "${GITHUB_OUTPUT}"
           else
