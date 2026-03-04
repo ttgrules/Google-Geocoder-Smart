@@ -192,7 +192,8 @@ jobs:
           set -- ./*.tar.gz
           [ -e "$1" ] || { echo "No dist tarball produced."; exit 1; }
           TARBALL="$1"
-          DIST_DIR="$(tar -tzf "${TARBALL}" | head -n 1 | cut -d/ -f1)"
+          DIST_DIR="${TARBALL%.tar.gz}"
+          [ -n "${DIST_DIR}" ] || { echo "Unable to determine extracted dist directory."; exit 1; }
           tar -xzf "${TARBALL}"
           cd "${DIST_DIR}"
           perl Makefile.PL
