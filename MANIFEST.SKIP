@@ -8,6 +8,10 @@
 ^scripts/release(?:/|$)
 ^.*\.tar\.gz$
 ^RELEASING\.md$
+^AGENTS\.md$
+^CI_LOCAL\.md$
+^renovate\.json$
+^scripts/validate-geocode-schema\.cjs$
 ^MANIFEST\..*$
 ^blib(?:/|$)
 ^_build(?:/|$)
