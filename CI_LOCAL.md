@@ -54,3 +54,20 @@ npx --yes ajv-cli@5 validate --strict=false --spec=draft7 \
 perl Makefile.PL
 make test
 ```
+
+### Perl Dist Tests
+
+```bash
+perl Makefile.PL
+rm -f ./*.tar.gz
+make dist
+set -- ./*.tar.gz
+[ -e "$1" ] || { echo "No dist tarball produced."; exit 1; }
+TARBALL="$1"
+DIST_DIR="${TARBALL%.tar.gz}"
+[ -n "${DIST_DIR}" ] || { echo "Unable to determine extracted dist directory."; exit 1; }
+tar -xzf "${TARBALL}"
+cd "${DIST_DIR}"
+perl Makefile.PL
+make test
+```

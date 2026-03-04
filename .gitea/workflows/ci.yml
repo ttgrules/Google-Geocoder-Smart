@@ -171,6 +171,34 @@ jobs:
           perl Makefile.PL
           make test
 
+  perl-dist-tests:
+    name: Perl Dist Tests
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ env.CI_GENERIC_IMAGE }}
+      credentials:
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+      - name: Build distribution and test extracted tarball
+        shell: bash
+        run: |
+          set -euo pipefail
+          perl Makefile.PL
+          rm -f ./*.tar.gz
+          make dist
+          set -- ./*.tar.gz
+          [ -e "$1" ] || { echo "No dist tarball produced."; exit 1; }
+          TARBALL="$1"
+          DIST_DIR="${TARBALL%.tar.gz}"
+          [ -n "${DIST_DIR}" ] || { echo "Unable to determine extracted dist directory."; exit 1; }
+          tar -xzf "${TARBALL}"
+          cd "${DIST_DIR}"
+          perl Makefile.PL
+          make test
+
   readme:
     name: README Up To Date
     runs-on: ubuntu-latest
@@ -250,6 +278,7 @@ jobs:
       - format-check
       - perl-syntax
       - perl-tests
+      - perl-dist-tests
       - readme
       - renovate-config-validate
       - renovate-policy-check
@@ -267,6 +296,7 @@ jobs:
             "format-check:${{ needs.format-check.result }}"
             "perl-syntax:${{ needs.perl-syntax.result }}"
             "perl-tests:${{ needs.perl-tests.result }}"
+            "perl-dist-tests:${{ needs.perl-dist-tests.result }}"
             "readme:${{ needs.readme.result }}"
             "renovate-config-validate:${{ needs.renovate-config-validate.result }}"
             "renovate-policy-check:${{ needs.renovate-policy-check.result }}"
