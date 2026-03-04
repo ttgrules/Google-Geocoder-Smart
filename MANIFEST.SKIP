@@ -12,7 +12,6 @@
 ^CI_LOCAL\.md$
 ^renovate\.json$
 ^scripts/validate-geocode-schema\.cjs$
-^MANIFEST\..*$
 ^blib(?:/|$)
 ^_build(?:/|$)
 ^Build(?:/|$)
