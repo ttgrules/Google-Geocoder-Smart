@@ -47,3 +47,10 @@ npx --yes ajv-cli@5 validate --strict=false --spec=draft7 \
   -s /tmp/geocode-v3.schema.json \
   -d t/fixtures/geocode-ok.json
 ```
+
+### Perl Tests
+
+```bash
+perl Makefile.PL
+make test
+```

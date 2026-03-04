@@ -4,6 +4,7 @@ Revision history for Perl extension Google::GeoCoder::Smart.
   - Added explicit CPAN metadata in Makefile.PL (perl version, license,
     repository resource, and provides)
   - Added SECURITY.md and CONTRIBUTING.md
+  - Added test coverage for MANIFEST/MANIFEST.SKIP file accounting
   - Removed legacy root test.pl so tests are discovered from t/ only
   - Updated POD NAME section format for abstract detection
 
