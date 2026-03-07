@@ -3,7 +3,7 @@ use warnings;
 
 use ExtUtils::Manifest qw(maniread maniskip);
 use File::Find qw(find);
-use Test::More;
+use Test2::V0;
 
 my $manifest = maniread('MANIFEST');
 my $skip     = maniskip();
@@ -25,7 +25,7 @@ find(
   '.',
 );
 
-is_deeply(
+is(
   \@missing,
   [],
   'all repository files are listed in MANIFEST or excluded via MANIFEST.SKIP',
