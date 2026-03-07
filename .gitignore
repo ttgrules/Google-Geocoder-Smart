@@ -12,5 +12,13 @@ node_modules
 *.c
 *.o
 *.so
+*.def
+*.obj
+*.dll
+*.exp
+*.lib
+*.pdb
+*.ilk
+*.manifest
 *.gz
 *.tar
