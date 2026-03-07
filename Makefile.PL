@@ -24,6 +24,9 @@ WriteMakefile(
     'JSON::PP'    => '0',
     'URI::Escape' => '0',
   },
+  TEST_REQUIRES => {
+    'Test2::V0' => '0',
+  },
   META_MERGE => {
     resources => {
       repository => 'https://github.com/ttgrules/Google-Geocoder-Smart',
