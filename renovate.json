@@ -6,5 +6,6 @@
       "automerge": true
     }
   ],
-  "semanticCommits": "enabled"
+  "semanticCommits": "enabled",
+  "extends": [":semanticCommits"]
 }
