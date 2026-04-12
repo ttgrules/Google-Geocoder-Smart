@@ -265,7 +265,6 @@ jobs:
             "yaml-lint:${{ needs.yaml-lint.result }}"
             "action-lint:${{ needs.action-lint.result }}"
             "json-validate:${{ needs.json-validate.result }}"
-            "geocode-schema-validate:${{ needs.geocode-schema-validate.result }}"
             "format-check:${{ needs.format-check.result }}"
             "perl-syntax:${{ needs.perl-syntax.result }}"
             "perl-tests:${{ needs.perl-tests.result }}"
