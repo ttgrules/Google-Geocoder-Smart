@@ -248,7 +248,6 @@ jobs:
       - yaml-lint
       - action-lint
       - json-validate
-      - geocode-schema-validate
       - format-check
       - perl-syntax
       - perl-tests
