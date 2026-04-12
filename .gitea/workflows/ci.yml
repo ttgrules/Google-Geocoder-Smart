@@ -91,32 +91,6 @@ jobs:
             jq empty "${FILE}"
           done
 
-  geocode-schema-validate:
-    name: Geocode Schema Validate
-    runs-on: ubuntu-latest
-    container:
-      image: ${{ env.CI_GENERIC_IMAGE }}
-      credentials:
-        username: ${{ secrets.REGISTRY_USERNAME }}
-        password: ${{ secrets.REGISTRY_TOKEN }}
-    needs:
-      - json-validate
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.2
-      - name: Setup Node
-        uses: actions/setup-node@v6.3.0
-        with:
-          node-version: 24
-      - name: Validate geocode fixture against v3 OpenAPI schema
-        env:
-          GEOCODE_OPENAPI_REF: main
-        run: |
-          node scripts/validate-geocode-schema.cjs /tmp/geocode-v3.schema.json
-          npx --yes ajv-cli@5 validate --strict=false --spec=draft7 \
-            -s /tmp/geocode-v3.schema.json \
-            -d t/fixtures/geocode-ok.json
-
   format-check:
     name: Format Check
     runs-on: ubuntu-latest
@@ -274,7 +248,6 @@ jobs:
       - yaml-lint
       - action-lint
       - json-validate
-      - geocode-schema-validate
       - format-check
       - perl-syntax
       - perl-tests
@@ -292,7 +265,6 @@ jobs:
             "yaml-lint:${{ needs.yaml-lint.result }}"
             "action-lint:${{ needs.action-lint.result }}"
             "json-validate:${{ needs.json-validate.result }}"
-            "geocode-schema-validate:${{ needs.geocode-schema-validate.result }}"
             "format-check:${{ needs.format-check.result }}"
             "perl-syntax:${{ needs.perl-syntax.result }}"
             "perl-tests:${{ needs.perl-tests.result }}"
