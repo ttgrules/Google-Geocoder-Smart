@@ -7,5 +7,5 @@
     }
   ],
   "semanticCommits": "enabled",
-  "extends": [":semanticCommits"]
+  "extends": [":semanticCommits", "group:monorepos", "group:allNonMajor"]
 }
