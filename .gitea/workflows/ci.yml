@@ -37,7 +37,7 @@ jobs:
         password: ${{ secrets.REGISTRY_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Show YAMLLint Version
         run: yamllint --version
       - name: YAMLLint
@@ -55,7 +55,7 @@ jobs:
         password: ${{ secrets.REGISTRY_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
 
       - name: Actionlint (Gitea-compatible rules)
         shell: bash
@@ -80,7 +80,7 @@ jobs:
         password: ${{ secrets.REGISTRY_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Validate JSON files
         shell: bash
         run: |
@@ -101,7 +101,7 @@ jobs:
         password: ${{ secrets.REGISTRY_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Setup Node
         uses: actions/setup-node@v7.0.0
         with:
@@ -119,7 +119,7 @@ jobs:
         password: ${{ secrets.REGISTRY_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Check Perl syntax
         shell: bash
         run: |
@@ -139,7 +139,7 @@ jobs:
         password: ${{ secrets.REGISTRY_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Run module tests
         run: |
           perl Makefile.PL
@@ -155,7 +155,7 @@ jobs:
         password: ${{ secrets.REGISTRY_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Build distribution and test extracted tarball
         shell: bash
         run: |
@@ -183,7 +183,7 @@ jobs:
         password: ${{ secrets.REGISTRY_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Regenerate README
         shell: bash
         run: |
@@ -209,7 +209,7 @@ jobs:
       - json-validate
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Validate renovate.json
         run: renovate-config-validator renovate.json
 
@@ -225,7 +225,7 @@ jobs:
       - renovate-config-validate
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Validate policy invariants
         shell: bash
         run: |
@@ -307,7 +307,7 @@ jobs:
       publish_pause: ${{ steps.detect-release.outputs.publish_pause }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
